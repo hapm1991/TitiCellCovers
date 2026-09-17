@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Covers TiTi Cell</title>
+
+<!-- Para que en iPhone se pueda "Añadir a pantalla de inicio" y se vea como app -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" href="logo.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#0f172a" />
+
+<!-- Cliente de Supabase (JS) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+  :root {
+    --teal: #14b8a6;
+    --teal-dark: #0d9488;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --texto: #f1f5f9;
+    --texto-suave: #94a3b8;
+    --borde: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    padding-bottom: 90px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #111827;
+    border-bottom: 1px solid var(--borde);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header img { width: 34px; height: 34px; border-radius: 8px; }
+  header h1 { font-size: 17px; margin: 0; flex: 1; }
+  header button { background: none; border: none; color: var(--texto-suave); font-size: 13px; }
+
+  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--borde);
+    background: #0b1220;
+    color: var(--texto);
+    font-size: 15px;
+  }
+  label { font-size: 13px; color: var(--texto-suave); display: block; margin: 10px 0 4px; }
+
+  button.primario {
+    background: var(--teal);
+    color: #04201c;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  button.primario:active { background: var(--teal-dark); }
+  button.secundario {
+    background: transparent;
+    color: var(--teal);
+    border: 1px solid var(--teal);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  button.peligro { color: #f87171; background: none; border: none; font-size: 13px; }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; }
+  .chip {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+    color: var(--texto-suave);
+    font-size: 13px;
+  }
+  .chip.activo { background: var(--teal); color: #04201c; border-color: var(--teal); }
+
+  .tarjeta {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border: 1px solid var(--borde);
+  }
+  .telefono-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 15px;
+  }
+  .nota { color: var(--texto-suave); font-size: 13px; margin-top: 4px; }
+
+  .fila-agregar { display: flex; gap: 8px; margin-top: 10px; }
+  .fila-agregar input { flex: 1; }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #04201c;
+    font-size: 28px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  }
+
+  .fondo-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal h2 { margin-top: 0; font-size: 18px; }
+
+  .oculto { display: none !important; }
+  .centro { text-align: center; margin-top: 60px; }
+  .error { color: #f87171; font-size: 14px; margin-top: 8px; }
+  .cargando { color: var(--texto-suave); font-size: 13px; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ===== PANTALLA DE LOGIN ===== -->
+<div id="pantallaLogin" class="centro" style="padding: 0 24px;">
+  <img src="logo.png" style="width:100px;border-radius:16px;margin-top:40px;" />
+  <h2>Covers TiTi Cell</h2>
+  <label>Correo</label>
+  <input id="loginEmail" type="email" placeholder="tucorreo@ejemplo.com" />
+  <label>Contraseña</label>
+  <input id="loginPass" type="password" placeholder="••••••••" />
+  <button class="primario" style="width:100%;margin-top:16px;" onclick="iniciarSesion()">Iniciar sesión</button>
+  <p id="loginError" class="error"></p>
+  <p style="color:var(--texto-suave);font-size:12px;margin-top:24px;">
+    ¿No tienes cuenta? Pídele al administrador que te cree una desde el panel de Supabase.
+  </p>
+</div>
+
+<!-- ===== APP PRINCIPAL ===== -->
+<div id="app" class="oculto">
+  <header>
+    <img src="logo.png" />
+    <h1>Compatibilidad de covers</h1>
+    <button onclick="cerrarSesion()">Salir</button>
+  </header>
+
+  <main>
+    <input id="busqueda" placeholder="Buscar modelo o marca..." oninput="renderizar()" />
+    <div id="chipsMarca" class="chips"></div>
+    <p id="estadoCarga" class="cargando oculto">Cargando...</p>
+    <p id="errorGeneral" class="error"></p>
+    <div id="listaGrupos"></div>
+  </main>
+
+  <button class="fab" onclick="abrirModalNuevo()">+</button>
+</div>
+
+<!-- ===== MODAL: NUEVO GRUPO ===== -->
+<div id="modalNuevo" class="fondo-modal oculto">
+  <div class="modal">
+    <h2>Nuevo grupo de compatibilidad</h2>
+    <p style="font-size:13px;color:var(--texto-suave);">Agrega los modelos que comparten este cover.</p>
+    <div id="listaTelefonosNuevo"></div>
+
+    <label>Marca</label>
+    <input id="nuevaMarca" list="listaMarcas" placeholder="Ej: Samsung" />
+    <datalist id="listaMarcas"></datalist>
+
+    <label>Modelo</label>
+    <div class="fila-agregar">
+      <input id="nuevoModelo" placeholder="Ej: A10" />
+      <button class="secundario" onclick="agregarTelefonoTemporal()">Añadir</button>
+    </div>
+
+    <label>Nota (opcional)</label>
+    <input id="nuevaNota" placeholder="Ej: cuidado, el flash queda un poco desalineado" />
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
+      <button class="secundario" onclick="cerrarModalNuevo()">Cancelar</button>
+      <button class="primario" onclick="crearGrupo()">Crear grupo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =======================================================================
+// CONFIGURA ESTOS DOS VALORES con los de tu proyecto de Supabase
+// (Panel de Supabase → Settings → API)
+// =======================================================================
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU-ANON-KEY";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let grupos = [];
+let marcaFiltro = null;
+let telefonosTemp = []; // mientras se arma un grupo nuevo en el modal
+
+// ---------- SESIÓN ----------
+async function iniciarSesion() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPass").value;
+  document.getElementById("loginError").textContent = "";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    document.getElementById("loginError").textContent = "No se pudo iniciar sesión: " + error.message;
+  }
+}
+
+async function cerrarSesion() {
+  await sb.auth.signOut();
+}
+
+sb.auth.onAuthStateChange((_evento, sesion) => {
+  if (sesion) {
+    document.getElementById("pantallaLogin").classList.add("oculto");
+    document.getElementById("app").classList.remove("oculto");
+    cargarGrupos();
+    suscribirseARealtime();
+  } else {
+    document.getElementById("pantallaLogin").classList.remove("oculto");
+    document.getElementById("app").classList.add("oculto");
+  }
+});
+
+// ---------- CARGA Y TIEMPO REAL ----------
+async function cargarGrupos() {
+  document.getElementById("estadoCarga").classList.remove("oculto");
+  document.getElementById("errorGeneral").textContent = "";
+  const { data, error } = await sb
+    .from("grupos_covers")
+    .select("*")
+    .order("creado_en", { ascending: true });
+  document.getElementById("estadoCarga").classList.add("oculto");
+
+  if (error) {
+    document.getElementById("errorGeneral").textContent = "No se pudo cargar: " + error.message;
+    return;
+  }
+  grupos = data;
+  renderizar();
+}
+
+let canalRealtime = null;
+function suscribirseARealtime() {
+  if (canalRealtime) return; // ya suscrito
+  canalRealtime = sb
+    .channel("grupos_covers_cambios")
+    .on("postgres_changes", { event: "*", schema: "public", table: "grupos_covers" }, () => {
+      cargarGrupos();
+    })
+    .subscribe();
+}
+
+// ---------- MARCAS CONOCIDAS ----------
+function marcasConocidas() {
+  const marcas = new Set();
+  grupos.forEach(g => (g.telefonos || []).forEach(t => {
+    if (t.marca) marcas.add(t.marca.trim());
+  }));
+  return [...marcas].sort((a, b) => a.localeCompare(b));
+}
+
+// ---------- RENDER ----------
+function renderizar() {
+  const busqueda = document.getElementById("busqueda").value.trim().toLowerCase();
+  const marcas = marcasConocidas();
+
+  // Chips de marca
+  const chipsDiv = document.getElementById("chipsMarca");
+  chipsDiv.innerHTML = "";
+  chipsDiv.appendChild(crearChip("Todas", marcaFiltro === null, () => { marcaFiltro = null; renderizar(); }));
+  marcas.forEach(m => {
+    chipsDiv.appendChild(crearChip(m, marcaFiltro === m, () => {
+      marcaFiltro = (marcaFiltro === m) ? null : m;
+      renderizar();
+    }));
+  });
+
+  // Datalist del modal (se mantiene actualizado)
+  const dl = document.getElementById("listaMarcas");
+  dl.innerHTML = marcas.map(m => `<option value="${escaparHtml(m)}">`).join("");
+
+  // Lista de grupos filtrada
+  const filtrados = grupos.filter(g => {
+    const telefonos = g.telefonos || [];
+    const pasaBusqueda = !busqueda || telefonos.some(t =>
+      (t.marca || "").toLowerCase().includes(busqueda) ||
+      (t.modelo || "").toLowerCase().includes(busqueda)
+    );
+    const pasaMarca = !marcaFiltro || telefonos.some(t => t.marca === marcaFiltro);
+    return pasaBusqueda && pasaMarca;
+  });
+
+  const lista = document.getElementById("listaGrupos");
+  lista.innerHTML = "";
+  filtrados.forEach(g => lista.appendChild(crearTarjetaGrupo(g)));
+}
+
+function crearChip(texto, activo, onClick) {
+  const d = document.createElement("div");
+  d.className = "chip" + (activo ? " activo" : "");
+  d.textContent = texto;
+  d.onclick = onClick;
+  return d;
+}
+
+function crearTarjetaGrupo(grupo) {
+  const div = document.createElement("div");
+  div.className = "tarjeta";
+
+  const encabezado = document.createElement("div");
+  encabezado.style.display = "flex";
+  encabezado.style.justifyContent = "space-between";
+  encabezado.innerHTML = `<strong>Modelos compatibles</strong>`;
+  const btnEliminar = document.createElement("button");
+  btnEliminar.className = "peligro";
+  btnEliminar.textContent = "Eliminar grupo";
+  btnEliminar.onclick = () => eliminarGrupo(grupo.id);
+  encabezado.appendChild(btnEliminar);
+  div.appendChild(encabezado);
+
+  (grupo.telefonos || []).forEach(t => {
+    const fila = document.createElement("div");
+    fila.className = "telefono-fila";
+    fila.innerHTML = `<span>• ${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</span>`;
+    const btnQuitar = document.createElement("button");
+    btnQuitar.className = "peligro";
+    btnQuitar.textContent = "Quitar";
+    btnQuitar.onclick = () => quitarTelefono(grupo, t);
+    fila.appendChild(btnQuitar);
+    div.appendChild(fila);
+  });
+
+  if (grupo.nota) {
+    const nota = document.createElement("div");
+    nota.className = "nota";
+    nota.textContent = "Nota: " + grupo.nota;
+    div.appendChild(nota);
+  }
+
+  const filaAgregar = document.createElement("div");
+  filaAgregar.className = "fila-agregar";
+  filaAgregar.style.marginTop = "10px";
+  const inputMarca = document.createElement("input");
+  inputMarca.placeholder = "Marca";
+  inputMarca.setAttribute("list", "listaMarcas");
+  inputMarca.style.flex = "1";
+  const inputModelo = document.createElement("input");
+  inputModelo.placeholder = "Modelo";
+  inputModelo.style.flex = "1";
+  const btnAgregar = document.createElement("button");
+  btnAgregar.className = "secundario";
+  btnAgregar.textContent = "Agregar";
+  btnAgregar.onclick = () => {
+    if (inputMarca.value.trim() && inputModelo.value.trim()) {
+      agregarTelefono(grupo, inputMarca.value.trim(), inputModelo.value.trim());
+      inputModelo.value = "";
+    }
+  };
+  filaAgregar.append(inputMarca, inputModelo, btnAgregar);
+  div.appendChild(filaAgregar);
+
+  return div;
+}
+
+// ---------- ACCIONES SOBRE GRUPOS (escriben directo en Supabase) ----------
+async function agregarTelefono(grupo, marca, modelo) {
+  const yaExiste = (grupo.telefonos || []).some(t => t.marca === marca && t.modelo === modelo);
+  if (yaExiste) return;
+  const nuevos = [...(grupo.telefonos || []), { marca, modelo }];
+  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupo.id);
+  if (error) alert("No se pudo guardar: " + error.message);
+}
+
+async function quitarTelefono(grupo, telefono) {
+  const nuevos = (grupo.telefonos || []).filter(t => !(t.marca === telefono.marca && t.modelo === telefono.modelo));
+  if (nuevos.length === 0) {
+    await eliminarGrupo(grupo.id);
+    return;
+  }
+  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupo.id);
+  if (error) alert("No se pudo guardar: " + error.message);
+}
+
+async function eliminarGrupo(id) {
+  if (!confirm("¿Eliminar este grupo por completo?")) return;
+  const { error } = await sb.from("grupos_covers").delete().eq("id", id);
+  if (error) alert("No se pudo eliminar: " + error.message);
+}
+
+// ---------- MODAL: NUEVO GRUPO ----------
+function abrirModalNuevo() {
+  telefonosTemp = [];
+  document.getElementById("nuevaMarca").value = "";
+  document.getElementById("nuevoModelo").value = "";
+  document.getElementById("nuevaNota").value = "";
+  renderizarTelefonosTemp();
+  document.getElementById("modalNuevo").classList.remove("oculto");
+}
+function cerrarModalNuevo() {
+  document.getElementById("modalNuevo").classList.add("oculto");
+}
+function agregarTelefonoTemporal() {
+  const marca = document.getElementById("nuevaMarca").value.trim();
+  const modelo = document.getElementById("nuevoModelo").value.trim();
+  if (!marca || !modelo) return;
+  telefonosTemp.push({ marca, modelo });
+  document.getElementById("nuevoModelo").value = "";
+  renderizarTelefonosTemp();
+}
+function renderizarTelefonosTemp() {
+  const div = document.getElementById("listaTelefonosNuevo");
+  div.innerHTML = "";
+  telefonosTemp.forEach((t, i) => {
+    const fila = document.createElement("div");
+    fila.className = "telefono-fila";
+    fila.innerHTML = `<span>• ${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</span>`;
+    const btn = document.createElement("button");
+    btn.className = "peligro";
+    btn.textContent = "Quitar";
+    btn.onclick = () => { telefonosTemp.splice(i, 1); renderizarTelefonosTemp(); };
+    fila.appendChild(btn);
+    div.appendChild(fila);
+  });
+}
+async function crearGrupo() {
+  if (telefonosTemp.length === 0) {
+    alert("Agrega al menos un modelo.");
+    return;
+  }
+  const nota = document.getElementById("nuevaNota").value.trim();
+  const { error } = await sb.from("grupos_covers").insert({ telefonos: telefonosTemp, nota });
+  if (error) {
+    alert("No se pudo crear el grupo: " + error.message);
+    return;
+  }
+  cerrarModalNuevo();
+}
+
+// ---------- UTIL ----------
+function escaparHtml(texto) {
+  const d = document.createElement("div");
+  d.textContent = texto ?? "";
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
