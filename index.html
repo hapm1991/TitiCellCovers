@@ -115,7 +115,7 @@ label{font-size:13px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
     <button id="btnConfig" class="config" onclick="navegar('config')">⚙️</button>
   </header>
   <main id="main"></main>
-  <button id="fabNuevo" class="fab oculto" onclick="abrirModalNuevoGrupo()">+</button>
+  <button id="fabNuevo" class="fab oculto" onclick="abrirModalVincular()">+</button>
   <nav class="tabs">
     <button data-tab="home" onclick="irTab('home')"><span class="icono">🏠</span>Inicio</button>
     <button data-tab="marcas" onclick="irTab('marcas')"><span class="icono">📱</span>Marcas</button>
@@ -126,22 +126,27 @@ label{font-size:13px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
 
 <div id="modalNuevo" class="fondo-modal oculto">
   <div class="modal">
-    <h2>Nuevo grupo de compatibilidad</h2>
-    <p style="font-size:13px;color:var(--texto-suave);">Agrega los modelos que comparten este cover.</p>
-    <div id="listaTelefonosNuevo"></div>
-    <label>Marca</label>
-    <input id="nuevaMarca" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
-    <datalist id="listaMarcasDatalist"></datalist>
-    <label>Modelo</label>
-    <div class="fila-agregar">
-      <input id="nuevoModelo" placeholder="Ej: A10" />
-      <button class="btn btn-linea" onclick="agregarTelefonoTemporal()">Añadir</button>
+    <h2 id="tituloModalVincular">Vincular modelos compatibles</h2>
+    <p style="font-size:13px;color:var(--texto-suave);">Di qué modelo es igual a cuál — si alguno ya tiene otros modelos ligados, se agrupan todos automáticamente.</p>
+
+    <div id="bloqueModeloA">
+      <label>Marca</label>
+      <input id="vincularMarcaA" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
+      <datalist id="listaMarcasDatalist"></datalist>
+      <label>Modelo</label>
+      <input id="vincularModeloA" placeholder="Ej: A04" />
     </div>
-    <label>Nota (opcional)</label>
-    <input id="nuevaNota" placeholder="Ej: cuidado, flash algo desalineado" />
+
+    <div style="text-align:center;color:var(--texto-suave);font-size:13px;margin:10px 0;">es igual a</div>
+
+    <label>Marca</label>
+    <input id="vincularMarcaB" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
+    <label>Modelo</label>
+    <input id="vincularModeloB" placeholder="Ej: A05" />
+
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
-      <button class="btn btn-linea" onclick="cerrarModalNuevoGrupo()">Cancelar</button>
-      <button class="btn btn-azul" onclick="crearGrupo()">Crear grupo</button>
+      <button class="btn btn-linea" onclick="cerrarModalVincular()">Cancelar</button>
+      <button class="btn btn-azul" onclick="confirmarVincular()">Vincular</button>
     </div>
   </div>
 </div>
@@ -390,8 +395,15 @@ function renderCompat(marca, modelo){
       main.appendChild(cont);
     }
   } else {
-    main.innerHTML += `<div class="vacio">Este modelo todavía no tiene compatibilidades registradas. Puedes agregarlo a un grupo desde la pestaña "Grupos".</div>`;
+    main.innerHTML += `<div class="vacio">Este modelo todavía no tiene compatibilidades registradas.</div>`;
   }
+  const btnAgregar = document.createElement("button");
+  btnAgregar.className = "btn btn-linea";
+  btnAgregar.style.width = "100%";
+  btnAgregar.style.marginTop = "14px";
+  btnAgregar.textContent = "+ Agregar modelo compatible con este";
+  btnAgregar.onclick = ()=>abrirModalVincular({ marca, modelo });
+  main.appendChild(btnAgregar);
 }
 
 // ---------- MARCAS ----------
@@ -507,7 +519,7 @@ function renderGrupoDetalle(id){
     <h3 style="font-size:14px;margin:16px 0 6px;">Modelos en este grupo</h3>
     <div class="tarjeta" id="listaEditGrupo"></div>
     <div style="margin-top:14px;">
-      <label>Agregar modelo a este grupo</label>
+      <label>Agregar modelo compatible con este grupo</label>
       <div class="fila-agregar">
         <input id="marcaAgregarGrupo" list="listaMarcasDatalist" placeholder="Marca" />
         <input id="modeloAgregarGrupo" placeholder="Modelo" />
@@ -531,75 +543,109 @@ function renderGrupoDetalle(id){
   });
 }
 
+// Refresca los datos y vuelve a pintar la pantalla actual de inmediato,
+// sin depender de que llegue el aviso de Realtime.
+async function refrescarYRepintar(){
+  await cargarGrupos();
+  render();
+}
+
+// Marca dos teléfonos como compatibles. Si alguno ya pertenece a un grupo,
+// se agrega ahí; si los dos ya tienen grupos distintos, se fusionan en uno solo.
+async function marcarCompatibles(a, b){
+  if (a.marca===b.marca && a.modelo===b.modelo){ alert("Son el mismo modelo."); return; }
+  const gA = grupoDe(a.marca, a.modelo);
+  const gB = grupoDe(b.marca, b.modelo);
+
+  if (gA && gB && gA.id===gB.id){ alert("Esos modelos ya están vinculados."); return; }
+
+  if (gA && gB){
+    const combinados = [...gA.telefonos];
+    gB.telefonos.forEach(t=>{ if(!combinados.some(x=>x.marca===t.marca&&x.modelo===t.modelo)) combinados.push(t); });
+    const { error: e1 } = await sb.from("grupos_covers").update({ telefonos: combinados, nota: gA.nota || gB.nota || "" }).eq("id", gA.id);
+    if (e1){ alert("No se pudo fusionar: " + e1.message); return; }
+    const { error: e2 } = await sb.from("grupos_covers").delete().eq("id", gB.id);
+    if (e2){ alert("No se pudo terminar la fusión: " + e2.message); return; }
+  } else if (gA){
+    const combinados = [...gA.telefonos];
+    if (!combinados.some(x=>x.marca===b.marca&&x.modelo===b.modelo)) combinados.push(b);
+    const { error } = await sb.from("grupos_covers").update({ telefonos: combinados }).eq("id", gA.id);
+    if (error){ alert("No se pudo guardar: " + error.message); return; }
+  } else if (gB){
+    const combinados = [...gB.telefonos];
+    if (!combinados.some(x=>x.marca===a.marca&&x.modelo===a.modelo)) combinados.push(a);
+    const { error } = await sb.from("grupos_covers").update({ telefonos: combinados }).eq("id", gB.id);
+    if (error){ alert("No se pudo guardar: " + error.message); return; }
+  } else {
+    const { error } = await sb.from("grupos_covers").insert({ telefonos: [a,b], nota: "" });
+    if (error){ alert("No se pudo crear: " + error.message); return; }
+  }
+  await refrescarYRepintar();
+}
+
 async function agregarModeloAGrupoExistente(grupoId){
   const marca = document.getElementById("marcaAgregarGrupo").value.trim();
   const modelo = document.getElementById("modeloAgregarGrupo").value.trim();
   if (!marca || !modelo) return;
   const g = grupos.find(x=>x.id===grupoId);
-  const yaExiste = (g.telefonos||[]).some(t=>t.marca===marca && t.modelo===modelo);
-  if (yaExiste){ alert("Ese modelo ya está en el grupo."); return; }
-  const nuevos = [...(g.telefonos||[]), { marca, modelo }];
-  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupoId);
-  if (error) alert("No se pudo guardar: " + error.message);
+  const referencia = (g.telefonos||[])[0];
+  await marcarCompatibles(referencia, { marca, modelo });
 }
 async function quitarTelefonoDeGrupo(grupoId, telefono){
   const g = grupos.find(x=>x.id===grupoId);
   const nuevos = (g.telefonos||[]).filter(t=>!(t.marca===telefono.marca && t.modelo===telefono.modelo));
   if (nuevos.length===0){ await eliminarGrupo(grupoId); return; }
   const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupoId);
-  if (error) alert("No se pudo guardar: " + error.message);
+  if (error){ alert("No se pudo guardar: " + error.message); return; }
+  await refrescarYRepintar();
 }
 async function eliminarGrupo(id){
   if (!confirm("¿Eliminar este grupo por completo?")) return;
   const { error } = await sb.from("grupos_covers").delete().eq("id", id);
   if (error){ alert("No se pudo eliminar: " + error.message); return; }
+  await cargarGrupos();
   volver();
 }
 
-// ---------- NUEVO GRUPO (modal) ----------
+// ---------- VINCULAR MODELOS (modal) ----------
 function pintarDatalistMarcas(){
   const dl = document.getElementById("listaMarcasDatalist");
   dl.innerHTML = marcasUnicas().map(m=>`<option value="${escaparHtml(m)}">`).join("");
 }
-function abrirModalNuevoGrupo(){
-  telefonosTemp = [];
-  document.getElementById("nuevaMarca").value = "";
-  document.getElementById("nuevoModelo").value = "";
-  document.getElementById("nuevaNota").value = "";
+let vincularModeloAFijo = null; // si viene desde la pantalla de Compatibilidad, ya sabemos el modelo A
+
+function abrirModalVincular(modeloAFijo){
+  vincularModeloAFijo = modeloAFijo || null;
   pintarDatalistMarcas();
-  pintarTelefonosTemp();
+  document.getElementById("vincularMarcaB").value = "";
+  document.getElementById("vincularModeloB").value = "";
+  const bloqueA = document.getElementById("bloqueModeloA");
+  if (vincularModeloAFijo){
+    bloqueA.classList.add("oculto");
+    document.getElementById("tituloModalVincular").textContent =
+      "¿Qué modelo es igual a " + vincularModeloAFijo.marca + " " + vincularModeloAFijo.modelo + "?";
+  } else {
+    bloqueA.classList.remove("oculto");
+    document.getElementById("vincularMarcaA").value = "";
+    document.getElementById("vincularModeloA").value = "";
+    document.getElementById("tituloModalVincular").textContent = "Vincular modelos compatibles";
+  }
   document.getElementById("modalNuevo").classList.remove("oculto");
 }
-function cerrarModalNuevoGrupo(){ document.getElementById("modalNuevo").classList.add("oculto"); }
-function agregarTelefonoTemporal(){
-  const marca = document.getElementById("nuevaMarca").value.trim();
-  const modelo = document.getElementById("nuevoModelo").value.trim();
-  if (!marca || !modelo) return;
-  telefonosTemp.push({ marca, modelo });
-  document.getElementById("nuevoModelo").value = "";
-  pintarTelefonosTemp();
-}
-function pintarTelefonosTemp(){
-  const cont = document.getElementById("listaTelefonosNuevo");
-  cont.innerHTML = "";
-  telefonosTemp.forEach((t,i)=>{
-    const fila = document.createElement("div");
-    fila.className = "fila-modal";
-    fila.innerHTML = `<span>• ${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</span>`;
-    const btn = document.createElement("button");
-    btn.className = "btn-peligro";
-    btn.textContent = "Quitar";
-    btn.onclick = ()=>{ telefonosTemp.splice(i,1); pintarTelefonosTemp(); };
-    fila.appendChild(btn);
-    cont.appendChild(fila);
-  });
-}
-async function crearGrupo(){
-  if (telefonosTemp.length===0){ alert("Agrega al menos un modelo."); return; }
-  const nota = document.getElementById("nuevaNota").value.trim();
-  const { error } = await sb.from("grupos_covers").insert({ telefonos: telefonosTemp, nota });
-  if (error){ alert("No se pudo crear: " + error.message); return; }
-  cerrarModalNuevoGrupo();
+function cerrarModalVincular(){ document.getElementById("modalNuevo").classList.add("oculto"); }
+
+async function confirmarVincular(){
+  const a = vincularModeloAFijo || {
+    marca: document.getElementById("vincularMarcaA").value.trim(),
+    modelo: document.getElementById("vincularModeloA").value.trim()
+  };
+  const b = {
+    marca: document.getElementById("vincularMarcaB").value.trim(),
+    modelo: document.getElementById("vincularModeloB").value.trim()
+  };
+  if (!a.marca || !a.modelo || !b.marca || !b.modelo){ alert("Completa marca y modelo de ambos."); return; }
+  await marcarCompatibles(a, b);
+  cerrarModalVincular();
 }
 
 // ---------- FAVORITOS ----------
