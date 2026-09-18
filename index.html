@@ -131,8 +131,8 @@ label{font-size:13px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
 
     <div id="bloqueModeloA">
       <label>Marca</label>
-      <input id="vincularMarcaA" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
-      <datalist id="listaMarcasDatalist"></datalist>
+      <select id="vincularMarcaA" class="select-marca" onchange="onCambioMarca('vincularMarcaA')"></select>
+      <input id="vincularMarcaA_nueva" class="oculto" placeholder="Nombre de la marca nueva" style="margin-top:6px;" />
       <label>Modelo</label>
       <input id="vincularModeloA" placeholder="Ej: A04" />
     </div>
@@ -140,7 +140,8 @@ label{font-size:13px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
     <div style="text-align:center;color:var(--texto-suave);font-size:13px;margin:10px 0;">es igual a</div>
 
     <label>Marca</label>
-    <input id="vincularMarcaB" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
+    <select id="vincularMarcaB" class="select-marca" onchange="onCambioMarca('vincularMarcaB')"></select>
+    <input id="vincularMarcaB_nueva" class="oculto" placeholder="Nombre de la marca nueva" style="margin-top:6px;" />
     <label>Modelo</label>
     <input id="vincularModeloB" placeholder="Ej: A05" />
 
@@ -269,7 +270,7 @@ function render(){
   document.getElementById("btnConfig").classList.toggle("oculto", actual.v!=="home");
   document.getElementById("tituloHeader").textContent = actual.v==="marcaDetalle" ? actual.marca : (TITULOS[actual.v]||"");
   document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("activo", b.dataset.tab===actual.v));
-  document.getElementById("fabNuevo").classList.toggle("oculto", actual.v!=="grupos");
+  document.getElementById("fabNuevo").classList.toggle("oculto", actual.v!=="grupos" && actual.v!=="home");
 
   const main = document.getElementById("main");
   main.innerHTML = "";
@@ -297,7 +298,7 @@ function renderHome(main){
     <h3 style="margin-top:22px;margin-bottom:8px;font-size:15px;">Marcas</h3>
     <div class="grid-marcas" id="gridMarcasHome"></div>
   `;
-  const marcas = marcasUnicas().slice(0,7);
+  const marcas = marcasUnicas();
   const grid = document.getElementById("gridMarcasHome");
   marcas.forEach(m=>{
     const b = document.createElement("button");
@@ -306,13 +307,6 @@ function renderHome(main){
     b.onclick = ()=>navegar("marcaDetalle",{marca:m});
     grid.appendChild(b);
   });
-  if (marcasUnicas().length>7){
-    const b = document.createElement("button");
-    b.className = "marca-item";
-    b.innerHTML = `<div class="avatar" style="background:#e2e8f0;color:#64748b">···</div><span>Más</span>`;
-    b.onclick = ()=>irTab("marcas");
-    grid.appendChild(b);
-  }
 }
 function navegarBusquedaDesdeHome(valor){
   navStack.push({ v:"buscar", query: valor });
@@ -520,15 +514,16 @@ function renderGrupoDetalle(id){
     <div class="tarjeta" id="listaEditGrupo"></div>
     <div style="margin-top:14px;">
       <label>Agregar modelo compatible con este grupo</label>
+      <select id="marcaAgregarGrupo" class="select-marca" onchange="onCambioMarca('marcaAgregarGrupo')" style="margin-bottom:6px;"></select>
+      <input id="marcaAgregarGrupo_nueva" class="oculto" placeholder="Nombre de la marca nueva" style="margin-bottom:6px;" />
       <div class="fila-agregar">
-        <input id="marcaAgregarGrupo" list="listaMarcasDatalist" placeholder="Marca" />
         <input id="modeloAgregarGrupo" placeholder="Modelo" />
         <button class="btn btn-linea" onclick="agregarModeloAGrupoExistente('${id}')">Agregar</button>
       </div>
     </div>
     <button class="btn btn-peligro" style="margin-top:18px;" onclick="eliminarGrupo('${id}')">Eliminar grupo completo</button>
   `;
-  pintarDatalistMarcas();
+  poblarSelectsMarca();
   const cont = document.getElementById("listaEditGrupo");
   (g.telefonos||[]).forEach(t=>{
     const fila = document.createElement("div");
@@ -584,7 +579,7 @@ async function marcarCompatibles(a, b){
 }
 
 async function agregarModeloAGrupoExistente(grupoId){
-  const marca = document.getElementById("marcaAgregarGrupo").value.trim();
+  const marca = leerMarcaSeleccionada("marcaAgregarGrupo");
   const modelo = document.getElementById("modeloAgregarGrupo").value.trim();
   if (!marca || !modelo) return;
   const g = grupos.find(x=>x.id===grupoId);
@@ -607,18 +602,38 @@ async function eliminarGrupo(id){
   volver();
 }
 
-// ---------- VINCULAR MODELOS (modal) ----------
-function pintarDatalistMarcas(){
-  const dl = document.getElementById("listaMarcasDatalist");
-  dl.innerHTML = marcasUnicas().map(m=>`<option value="${escaparHtml(m)}">`).join("");
+// ---------- SELECTS DE MARCA (nativos, con opción "otra marca") ----------
+function poblarSelectsMarca(){
+  const marcas = marcasUnicas();
+  document.querySelectorAll("select.select-marca").forEach(sel=>{
+    const actual = sel.value;
+    sel.innerHTML = `<option value="">Selecciona una marca</option>` +
+      marcas.map(m=>`<option value="${escaparHtml(m)}">${escaparHtml(m)}</option>`).join("") +
+      `<option value="__nueva__">+ Otra marca (escribir)</option>`;
+    if (marcas.includes(actual)) sel.value = actual;
+    onCambioMarca(sel.id);
+  });
 }
+function onCambioMarca(idBase){
+  const sel = document.getElementById(idBase);
+  const nueva = document.getElementById(idBase+"_nueva");
+  if (!sel || !nueva) return;
+  if (sel.value === "__nueva__"){ nueva.classList.remove("oculto"); nueva.focus(); }
+  else { nueva.classList.add("oculto"); }
+}
+function leerMarcaSeleccionada(idBase){
+  const sel = document.getElementById(idBase);
+  if (sel.value === "__nueva__") return document.getElementById(idBase+"_nueva").value.trim();
+  return sel.value;
+}
+
+// ---------- VINCULAR MODELOS (modal) ----------
 let vincularModeloAFijo = null; // si viene desde la pantalla de Compatibilidad, ya sabemos el modelo A
 
 function abrirModalVincular(modeloAFijo){
   vincularModeloAFijo = modeloAFijo || null;
-  pintarDatalistMarcas();
-  document.getElementById("vincularMarcaB").value = "";
   document.getElementById("vincularModeloB").value = "";
+  document.getElementById("vincularMarcaB_nueva").value = "";
   const bloqueA = document.getElementById("bloqueModeloA");
   if (vincularModeloAFijo){
     bloqueA.classList.add("oculto");
@@ -626,21 +641,22 @@ function abrirModalVincular(modeloAFijo){
       "¿Qué modelo es igual a " + vincularModeloAFijo.marca + " " + vincularModeloAFijo.modelo + "?";
   } else {
     bloqueA.classList.remove("oculto");
-    document.getElementById("vincularMarcaA").value = "";
     document.getElementById("vincularModeloA").value = "";
+    document.getElementById("vincularMarcaA_nueva").value = "";
     document.getElementById("tituloModalVincular").textContent = "Vincular modelos compatibles";
   }
+  poblarSelectsMarca();
   document.getElementById("modalNuevo").classList.remove("oculto");
 }
 function cerrarModalVincular(){ document.getElementById("modalNuevo").classList.add("oculto"); }
 
 async function confirmarVincular(){
   const a = vincularModeloAFijo || {
-    marca: document.getElementById("vincularMarcaA").value.trim(),
+    marca: leerMarcaSeleccionada("vincularMarcaA"),
     modelo: document.getElementById("vincularModeloA").value.trim()
   };
   const b = {
-    marca: document.getElementById("vincularMarcaB").value.trim(),
+    marca: leerMarcaSeleccionada("vincularMarcaB"),
     modelo: document.getElementById("vincularModeloB").value.trim()
   };
   if (!a.marca || !a.modelo || !b.marca || !b.modelo){ alert("Completa marca y modelo de ambos."); return; }
