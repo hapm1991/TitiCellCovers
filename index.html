@@ -4,475 +4,663 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Covers TiTi Cell</title>
-
-<!-- Para que en iPhone se pueda "Añadir a pantalla de inicio" y se vea como app -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="logo.png" />
 <link rel="manifest" href="manifest.json" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0f172a" />
-
-<!-- Cliente de Supabase (JS) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#f8fafc" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
 <style>
-  :root {
-    --teal: #14b8a6;
-    --teal-dark: #0d9488;
-    --bg: #0f172a;
-    --card: #1e293b;
-    --texto: #f1f5f9;
-    --texto-suave: #94a3b8;
-    --borde: #334155;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--texto);
-    padding-bottom: 90px;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    background: #111827;
-    border-bottom: 1px solid var(--borde);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  header img { width: 34px; height: 34px; border-radius: 8px; }
-  header h1 { font-size: 17px; margin: 0; flex: 1; }
-  header button { background: none; border: none; color: var(--texto-suave); font-size: 13px; }
+:root{
+  --azul:#2563eb; --azul-suave:#eff6ff; --verde:#16a34a; --verde-suave:#f0fdf4;
+  --rojo:#dc2626; --bg:#f8fafc; --card:#ffffff; --texto:#0f172a; --texto-suave:#64748b;
+  --borde:#e2e8f0;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--texto);}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:10;}
+header .volver{background:none;border:none;font-size:22px;color:var(--azul);padding:0 4px;}
+header h1{font-size:17px;margin:0;flex:1;}
+header .config{background:none;border:none;font-size:20px;color:var(--texto-suave);}
+main{flex:1;padding:16px;padding-bottom:90px;}
+nav.tabs{position:sticky;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--borde);padding:6px 0 max(6px,env(safe-area-inset-bottom));}
+nav.tabs button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--texto-suave);font-size:11px;padding:4px 0;}
+nav.tabs button.activo{color:var(--azul);}
+nav.tabs .icono{font-size:20px;}
 
-  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+input[type=text],input[type=email],input[type=password],input[type=search]{
+  width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--borde);background:#fff;font-size:15px;color:var(--texto);
+}
+label{font-size:13px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
 
-  input, select {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--borde);
-    background: #0b1220;
-    color: var(--texto);
-    font-size: 15px;
-  }
-  label { font-size: 13px; color: var(--texto-suave); display: block; margin: 10px 0 4px; }
+.btn{border:none;border-radius:12px;padding:11px 16px;font-weight:600;font-size:15px;}
+.btn-azul{background:var(--azul);color:#fff;}
+.btn-linea{background:#fff;border:1px solid var(--borde);color:var(--texto);}
+.btn-peligro{background:none;border:none;color:var(--rojo);font-size:13px;}
+.btn-texto{background:none;border:none;color:var(--azul);font-size:14px;font-weight:600;}
 
-  button.primario {
-    background: var(--teal);
-    color: #04201c;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 15px;
-  }
-  button.primario:active { background: var(--teal-dark); }
-  button.secundario {
-    background: transparent;
-    color: var(--teal);
-    border: 1px solid var(--teal);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 14px;
-  }
-  button.peligro { color: #f87171; background: none; border: none; font-size: 13px; }
+.tarjeta{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--borde);}
+.tarjeta-titulo{font-weight:700;font-size:20px;margin-bottom:2px;}
+.tarjeta-sub{color:var(--texto-suave);font-size:13px;}
 
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; }
-  .chip {
-    white-space: nowrap;
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--borde);
-    color: var(--texto-suave);
-    font-size: 13px;
-  }
-  .chip.activo { background: var(--teal); color: #04201c; border-color: var(--teal); }
+.card-accion{background:var(--card);border:1px solid var(--borde);border-radius:14px;padding:14px;flex:1;text-align:left;}
+.card-accion .icono{font-size:22px;color:var(--azul);margin-bottom:6px;display:block;}
+.card-accion strong{display:block;font-size:14px;margin-bottom:2px;}
+.card-accion span.desc{font-size:12px;color:var(--texto-suave);}
 
-  .tarjeta {
-    background: var(--card);
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
-    border: 1px solid var(--borde);
-  }
-  .telefono-fila {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    font-size: 15px;
-  }
-  .nota { color: var(--texto-suave); font-size: 13px; margin-top: 4px; }
+.fila{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--borde);}
+.fila:last-child{border-bottom:none;}
+.fila .chevron{color:#cbd5e1;font-size:18px;}
+.fila-info{flex:1;min-width:0;}
+.fila-nombre{font-weight:600;font-size:15px;}
+.fila-code{color:var(--texto-suave);font-size:12px;}
 
-  .fila-agregar { display: flex; gap: 8px; margin-top: 10px; }
-  .fila-agregar input { flex: 1; }
+.avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:15px;flex-shrink:0;overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.avatar-mini{width:30px;height:30px;font-size:12px;border-radius:9px;}
 
-  .fab {
-    position: fixed;
-    bottom: 24px;
-    right: 20px;
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: var(--teal);
-    color: #04201c;
-    font-size: 28px;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,.4);
-  }
+.grid-marcas{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0;}
+.grid-marcas .marca-item{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;}
+.grid-marcas .marca-item span{font-size:12px;color:var(--texto);}
 
-  .fondo-modal {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.6);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-    z-index: 50;
-  }
-  .modal {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 18px;
-    width: 100%;
-    max-width: 420px;
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-  .modal h2 { margin-top: 0; font-size: 18px; }
+.badge-verde{display:inline-flex;align-items:center;gap:6px;background:var(--verde-suave);color:var(--verde);padding:8px 14px;border-radius:10px;font-weight:600;font-size:14px;}
+.badge-gris{background:#f1f5f9;color:var(--texto-suave);padding:4px 10px;border-radius:8px;font-size:12px;}
 
-  .oculto { display: none !important; }
-  .centro { text-align: center; margin-top: 60px; }
-  .error { color: #f87171; font-size: 14px; margin-top: 8px; }
-  .cargando { color: var(--texto-suave); font-size: 13px; text-align: center; padding: 20px; }
+.tabs-secundarias{display:flex;gap:8px;margin-bottom:12px;}
+.tabs-secundarias button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--borde);background:#fff;color:var(--texto-suave);font-size:14px;font-weight:600;}
+.tabs-secundarias button.activo{background:var(--azul);color:#fff;border-color:var(--azul);}
+
+.grupo-modelos{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;}
+.grupo-modelo-chip{background:var(--azul-suave);border-radius:12px;padding:10px;min-width:120px;text-align:center;}
+.grupo-modelo-chip .avatar{margin:0 auto 6px;}
+.grupo-modelo-chip .nombre{font-size:12px;font-weight:600;}
+.grupo-modelo-chip .code{font-size:11px;color:var(--texto-suave);}
+
+.fab{position:fixed;bottom:90px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--azul);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(37,99,235,.4);z-index:5;}
+
+.fondo-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:18px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;}
+.modal h2{margin-top:0;font-size:18px;}
+.fila-modal{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px;}
+.fila-agregar{display:flex;gap:8px;margin-top:6px;}
+.fila-agregar input{flex:1;}
+
+.oculto{display:none !important;}
+.centro{text-align:center;}
+.error{color:var(--rojo);font-size:14px;margin-top:8px;}
+.cargando{color:var(--texto-suave);font-size:13px;text-align:center;padding:20px;}
+.vacio{color:var(--texto-suave);font-size:14px;text-align:center;padding:30px 10px;}
+.consejo{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;font-size:13px;color:#92400e;margin-top:16px;}
 </style>
 </head>
 <body>
 
-<!-- ===== PANTALLA DE LOGIN ===== -->
-<div id="pantallaLogin" class="centro" style="padding: 0 24px;">
-  <img src="logo.png" style="width:100px;border-radius:16px;margin-top:40px;" />
+<div id="pantallaLogin" class="centro" style="padding:60px 24px;max-width:420px;margin:0 auto;">
+  <img src="logo.png" style="width:96px;border-radius:18px;" />
   <h2>Covers TiTi Cell</h2>
   <label>Correo</label>
   <input id="loginEmail" type="email" placeholder="tucorreo@ejemplo.com" />
   <label>Contraseña</label>
   <input id="loginPass" type="password" placeholder="••••••••" />
-  <button class="primario" style="width:100%;margin-top:16px;" onclick="iniciarSesion()">Iniciar sesión</button>
+  <button class="btn btn-azul" style="width:100%;margin-top:16px;" onclick="iniciarSesion()">Iniciar sesión</button>
   <p id="loginError" class="error"></p>
-  <p style="color:var(--texto-suave);font-size:12px;margin-top:24px;">
-    ¿No tienes cuenta? Pídele al administrador que te cree una desde el panel de Supabase.
-  </p>
 </div>
 
-<!-- ===== APP PRINCIPAL ===== -->
 <div id="app" class="oculto">
   <header>
-    <img src="logo.png" />
-    <h1>Compatibilidad de covers</h1>
-    <button onclick="cerrarSesion()">Salir</button>
+    <button id="btnVolver" class="volver oculto" onclick="volver()">‹</button>
+    <h1 id="tituloHeader">Compatibilidad de Covers</h1>
+    <button id="btnConfig" class="config" onclick="navegar('config')">⚙️</button>
   </header>
-
-  <main>
-    <input id="busqueda" placeholder="Buscar modelo o marca..." oninput="renderizar()" />
-    <div id="chipsMarca" class="chips"></div>
-    <p id="estadoCarga" class="cargando oculto">Cargando...</p>
-    <p id="errorGeneral" class="error"></p>
-    <div id="listaGrupos"></div>
-  </main>
-
-  <button class="fab" onclick="abrirModalNuevo()">+</button>
+  <main id="main"></main>
+  <button id="fabNuevo" class="fab oculto" onclick="abrirModalNuevoGrupo()">+</button>
+  <nav class="tabs">
+    <button data-tab="home" onclick="irTab('home')"><span class="icono">🏠</span>Inicio</button>
+    <button data-tab="marcas" onclick="irTab('marcas')"><span class="icono">📱</span>Marcas</button>
+    <button data-tab="grupos" onclick="irTab('grupos')"><span class="icono">🗂️</span>Grupos</button>
+    <button data-tab="favoritos" onclick="irTab('favoritos')"><span class="icono">♡</span>Favoritos</button>
+  </nav>
 </div>
 
-<!-- ===== MODAL: NUEVO GRUPO ===== -->
 <div id="modalNuevo" class="fondo-modal oculto">
   <div class="modal">
     <h2>Nuevo grupo de compatibilidad</h2>
     <p style="font-size:13px;color:var(--texto-suave);">Agrega los modelos que comparten este cover.</p>
     <div id="listaTelefonosNuevo"></div>
-
     <label>Marca</label>
-    <input id="nuevaMarca" list="listaMarcas" placeholder="Ej: Samsung" />
-    <datalist id="listaMarcas"></datalist>
-
+    <input id="nuevaMarca" list="listaMarcasDatalist" placeholder="Ej: Samsung" />
+    <datalist id="listaMarcasDatalist"></datalist>
     <label>Modelo</label>
     <div class="fila-agregar">
       <input id="nuevoModelo" placeholder="Ej: A10" />
-      <button class="secundario" onclick="agregarTelefonoTemporal()">Añadir</button>
+      <button class="btn btn-linea" onclick="agregarTelefonoTemporal()">Añadir</button>
     </div>
-
     <label>Nota (opcional)</label>
-    <input id="nuevaNota" placeholder="Ej: cuidado, el flash queda un poco desalineado" />
-
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-      <button class="secundario" onclick="cerrarModalNuevo()">Cancelar</button>
-      <button class="primario" onclick="crearGrupo()">Crear grupo</button>
+    <input id="nuevaNota" placeholder="Ej: cuidado, flash algo desalineado" />
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+      <button class="btn btn-linea" onclick="cerrarModalNuevoGrupo()">Cancelar</button>
+      <button class="btn btn-azul" onclick="crearGrupo()">Crear grupo</button>
     </div>
   </div>
 </div>
 
 <script>
 // =======================================================================
-// CONFIGURA ESTOS DOS VALORES con los de tu proyecto de Supabase
-// (Panel de Supabase → Settings → API)
+// Configuración de Supabase
 // =======================================================================
 const SUPABASE_URL = "https://jlixinvggjyixsdoyvri.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsaXhpbnZnZ2p5aXhzZG95dnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2OTgwOTksImV4cCI6MjEwNTI3NDA5OX0.W_1GGPHstxFFUwgt868CmOf5xSL0-aUCRPHe-MFapKU";
-
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let grupos = [];
-let marcaFiltro = null;
-let telefonosTemp = []; // mientras se arma un grupo nuevo en el modal
+let logosMap = {};       // marca_slug -> url
+let favoritos = new Set(JSON.parse(localStorage.getItem("favoritosCovers") || "[]"));
+let navStack = [{ v: "home" }];
+let telefonosTemp = [];
 
-// ---------- SESIÓN ----------
-async function iniciarSesion() {
+const PALETA = ["#2563eb","#7c3aed","#0891b2","#16a34a","#ea580c","#db2777","#4f46e5","#0d9488"];
+
+// ---------- utilidades ----------
+function slug(marca){ return marca.trim().toLowerCase().replace(/\s+/g,"-"); }
+function iniciales(marca){ return marca.trim().slice(0,2).toUpperCase(); }
+function colorFor(marca){
+  let h = 0;
+  for (const c of marca) h = (h * 31 + c.charCodeAt(0)) % PALETA.length;
+  return PALETA[Math.abs(h) % PALETA.length];
+}
+function avatarHtml(marca, mini){
+  const url = logosMap[slug(marca)];
+  const claseExtra = mini ? " avatar-mini" : "";
+  if (url) return `<div class="avatar${claseExtra}"><img src="${escaparHtml(url)}"></div>`;
+  return `<div class="avatar${claseExtra}" style="background:${colorFor(marca)}">${escaparHtml(iniciales(marca))}</div>`;
+}
+function escaparHtml(t){ const d=document.createElement("div"); d.textContent = t ?? ""; return d.innerHTML; }
+
+function telefonosFlat(){
+  const lista = [];
+  grupos.forEach((g, gi) => (g.telefonos||[]).forEach(t => lista.push({ marca:t.marca, modelo:t.modelo, grupo:g, grupoIndex:gi })));
+  return lista;
+}
+function marcasUnicas(){
+  const vistas = new Map();
+  telefonosFlat().forEach(t => { const k=t.marca.toLowerCase(); if(!vistas.has(k)) vistas.set(k, t.marca); });
+  return [...vistas.values()].sort((a,b)=>a.localeCompare(b));
+}
+function grupoDe(marca, modelo){
+  return grupos.find(g => (g.telefonos||[]).some(t => t.marca===marca && t.modelo===modelo));
+}
+function etiquetaGrupo(grupo){
+  const idx = grupos.findIndex(g => g.id === grupo.id);
+  return "GRUPO #" + String(idx+1).padStart(3,"0");
+}
+function favKey(marca,modelo){ return marca+"||"+modelo; }
+function toggleFavorito(marca,modelo){
+  const k = favKey(marca,modelo);
+  if (favoritos.has(k)) favoritos.delete(k); else favoritos.add(k);
+  localStorage.setItem("favoritosCovers", JSON.stringify([...favoritos]));
+  render();
+}
+
+// ---------- sesión ----------
+async function iniciarSesion(){
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPass").value;
   document.getElementById("loginError").textContent = "";
   const { error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) {
-    document.getElementById("loginError").textContent = "No se pudo iniciar sesión: " + error.message;
-  }
+  if (error) document.getElementById("loginError").textContent = "No se pudo iniciar sesión: " + error.message;
 }
+async function cerrarSesion(){ await sb.auth.signOut(); }
 
-async function cerrarSesion() {
-  await sb.auth.signOut();
-}
-
-sb.auth.onAuthStateChange((_evento, sesion) => {
-  if (sesion) {
+sb.auth.onAuthStateChange((_e, sesion) => {
+  if (sesion){
     document.getElementById("pantallaLogin").classList.add("oculto");
     document.getElementById("app").classList.remove("oculto");
-    cargarGrupos();
-    suscribirseARealtime();
+    cargarTodo();
   } else {
     document.getElementById("pantallaLogin").classList.remove("oculto");
     document.getElementById("app").classList.add("oculto");
   }
 });
 
-// ---------- CARGA Y TIEMPO REAL ----------
-async function cargarGrupos() {
-  document.getElementById("estadoCarga").classList.remove("oculto");
-  document.getElementById("errorGeneral").textContent = "";
-  const { data, error } = await sb
-    .from("grupos_covers")
-    .select("*")
-    .order("creado_en", { ascending: true });
-  document.getElementById("estadoCarga").classList.add("oculto");
-
-  if (error) {
-    document.getElementById("errorGeneral").textContent = "No se pudo cargar: " + error.message;
-    return;
-  }
-  grupos = data;
-  renderizar();
+async function cargarTodo(){
+  await Promise.all([cargarGrupos(), cargarLogos()]);
+  suscribirRealtime();
+  render();
 }
 
-let canalRealtime = null;
-function suscribirseARealtime() {
-  if (canalRealtime) return; // ya suscrito
-  canalRealtime = sb
-    .channel("grupos_covers_cambios")
-    .on("postgres_changes", { event: "*", schema: "public", table: "grupos_covers" }, () => {
-      cargarGrupos();
-    })
+async function cargarGrupos(){
+  const { data, error } = await sb.from("grupos_covers").select("*").order("creado_en", { ascending: true });
+  if (!error) grupos = data;
+}
+async function cargarLogos(){
+  const { data, error } = await sb.from("marca_logos").select("*");
+  if (!error){ logosMap = {}; data.forEach(r => logosMap[r.marca_slug] = r.logo_url); }
+}
+let canal = null;
+function suscribirRealtime(){
+  if (canal) return;
+  canal = sb.channel("cambios_covers")
+    .on("postgres_changes", { event:"*", schema:"public", table:"grupos_covers" }, async ()=>{ await cargarGrupos(); render(); })
+    .on("postgres_changes", { event:"*", schema:"public", table:"marca_logos" }, async ()=>{ await cargarLogos(); render(); })
     .subscribe();
 }
 
-// ---------- MARCAS CONOCIDAS ----------
-function marcasConocidas() {
-  const marcas = new Set();
-  grupos.forEach(g => (g.telefonos || []).forEach(t => {
-    if (t.marca) marcas.add(t.marca.trim());
-  }));
-  return [...marcas].sort((a, b) => a.localeCompare(b));
-}
+// ---------- navegación ----------
+function navegar(v, params){ navStack.push({ v, ...params }); render(); }
+function volver(){ if (navStack.length>1){ navStack.pop(); render(); } }
+function irTab(v){ navStack = [{ v }]; render(); }
 
-// ---------- RENDER ----------
-function renderizar() {
-  const busqueda = document.getElementById("busqueda").value.trim().toLowerCase();
-  const marcas = marcasConocidas();
+const TITULOS = {
+  home:"Compatibilidad de Covers", buscar:"Buscar modelo", tengoUnCover:"Tengo un cover para...",
+  compat:"Compatibilidad", marcas:"Marcas", marcaDetalle:"", grupos:"Grupos", grupoDetalle:"Grupo de compatibilidad",
+  favoritos:"Favoritos", config:"Configuración"
+};
 
-  // Chips de marca
-  const chipsDiv = document.getElementById("chipsMarca");
-  chipsDiv.innerHTML = "";
-  chipsDiv.appendChild(crearChip("Todas", marcaFiltro === null, () => { marcaFiltro = null; renderizar(); }));
-  marcas.forEach(m => {
-    chipsDiv.appendChild(crearChip(m, marcaFiltro === m, () => {
-      marcaFiltro = (marcaFiltro === m) ? null : m;
-      renderizar();
-    }));
-  });
+function render(){
+  const actual = navStack[navStack.length-1];
+  document.getElementById("btnVolver").classList.toggle("oculto", navStack.length<=1);
+  document.getElementById("btnConfig").classList.toggle("oculto", actual.v!=="home");
+  document.getElementById("tituloHeader").textContent = actual.v==="marcaDetalle" ? actual.marca : (TITULOS[actual.v]||"");
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("activo", b.dataset.tab===actual.v));
+  document.getElementById("fabNuevo").classList.toggle("oculto", actual.v!=="grupos");
 
-  // Datalist del modal (se mantiene actualizado)
-  const dl = document.getElementById("listaMarcas");
-  dl.innerHTML = marcas.map(m => `<option value="${escaparHtml(m)}">`).join("");
-
-  // Lista de grupos filtrada
-  const filtrados = grupos.filter(g => {
-    const telefonos = g.telefonos || [];
-    const pasaBusqueda = !busqueda || telefonos.some(t =>
-      (t.marca || "").toLowerCase().includes(busqueda) ||
-      (t.modelo || "").toLowerCase().includes(busqueda)
-    );
-    const pasaMarca = !marcaFiltro || telefonos.some(t => t.marca === marcaFiltro);
-    return pasaBusqueda && pasaMarca;
-  });
-
-  const lista = document.getElementById("listaGrupos");
-  lista.innerHTML = "";
-  filtrados.forEach(g => lista.appendChild(crearTarjetaGrupo(g)));
-}
-
-function crearChip(texto, activo, onClick) {
-  const d = document.createElement("div");
-  d.className = "chip" + (activo ? " activo" : "");
-  d.textContent = texto;
-  d.onclick = onClick;
-  return d;
-}
-
-function crearTarjetaGrupo(grupo) {
-  const div = document.createElement("div");
-  div.className = "tarjeta";
-
-  const encabezado = document.createElement("div");
-  encabezado.style.display = "flex";
-  encabezado.style.justifyContent = "space-between";
-  encabezado.innerHTML = `<strong>Modelos compatibles</strong>`;
-  const btnEliminar = document.createElement("button");
-  btnEliminar.className = "peligro";
-  btnEliminar.textContent = "Eliminar grupo";
-  btnEliminar.onclick = () => eliminarGrupo(grupo.id);
-  encabezado.appendChild(btnEliminar);
-  div.appendChild(encabezado);
-
-  (grupo.telefonos || []).forEach(t => {
-    const fila = document.createElement("div");
-    fila.className = "telefono-fila";
-    fila.innerHTML = `<span>• ${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</span>`;
-    const btnQuitar = document.createElement("button");
-    btnQuitar.className = "peligro";
-    btnQuitar.textContent = "Quitar";
-    btnQuitar.onclick = () => quitarTelefono(grupo, t);
-    fila.appendChild(btnQuitar);
-    div.appendChild(fila);
-  });
-
-  if (grupo.nota) {
-    const nota = document.createElement("div");
-    nota.className = "nota";
-    nota.textContent = "Nota: " + grupo.nota;
-    div.appendChild(nota);
-  }
-
-  const filaAgregar = document.createElement("div");
-  filaAgregar.className = "fila-agregar";
-  filaAgregar.style.marginTop = "10px";
-  const inputMarca = document.createElement("input");
-  inputMarca.placeholder = "Marca";
-  inputMarca.setAttribute("list", "listaMarcas");
-  inputMarca.style.flex = "1";
-  const inputModelo = document.createElement("input");
-  inputModelo.placeholder = "Modelo";
-  inputModelo.style.flex = "1";
-  const btnAgregar = document.createElement("button");
-  btnAgregar.className = "secundario";
-  btnAgregar.textContent = "Agregar";
-  btnAgregar.onclick = () => {
-    if (inputMarca.value.trim() && inputModelo.value.trim()) {
-      agregarTelefono(grupo, inputMarca.value.trim(), inputModelo.value.trim());
-      inputModelo.value = "";
-    }
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+  const renderers = {
+    home: renderHome, buscar: ()=>renderBuscar(actual), tengoUnCover: ()=>renderBuscar(actual),
+    compat: ()=>renderCompat(actual.marca, actual.modelo), marcas: renderMarcas,
+    marcaDetalle: ()=>renderMarcaDetalle(actual.marca), grupos: renderGrupos,
+    grupoDetalle: ()=>renderGrupoDetalle(actual.id), favoritos: renderFavoritos, config: renderConfig
   };
-  filaAgregar.append(inputMarca, inputModelo, btnAgregar);
-  div.appendChild(filaAgregar);
-
-  return div;
+  (renderers[actual.v]||renderHome)(main);
 }
 
-// ---------- ACCIONES SOBRE GRUPOS (escriben directo en Supabase) ----------
-async function agregarTelefono(grupo, marca, modelo) {
-  const yaExiste = (grupo.telefonos || []).some(t => t.marca === marca && t.modelo === modelo);
-  if (yaExiste) return;
-  const nuevos = [...(grupo.telefonos || []), { marca, modelo }];
-  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupo.id);
-  if (error) alert("No se pudo guardar: " + error.message);
-}
-
-async function quitarTelefono(grupo, telefono) {
-  const nuevos = (grupo.telefonos || []).filter(t => !(t.marca === telefono.marca && t.modelo === telefono.modelo));
-  if (nuevos.length === 0) {
-    await eliminarGrupo(grupo.id);
-    return;
+// ---------- HOME ----------
+function renderHome(main){
+  main.innerHTML = `
+    <input type="text" placeholder="Buscar modelo..." oninput="navegarBusquedaDesdeHome(this.value)" />
+    <div style="display:flex;gap:12px;margin-top:14px;">
+      <button class="card-accion" onclick="navegar('tengoUnCover',{query:''})">
+        <span class="icono">📲</span><strong>Tengo un cover</strong><span class="desc">¿Para qué modelos sirve?</span>
+      </button>
+      <button class="card-accion" onclick="irTab('marcas')">
+        <span class="icono">🔎</span><strong>Buscar por marca</strong><span class="desc">Explora las compatibilidades</span>
+      </button>
+    </div>
+    <h3 style="margin-top:22px;margin-bottom:8px;font-size:15px;">Marcas</h3>
+    <div class="grid-marcas" id="gridMarcasHome"></div>
+  `;
+  const marcas = marcasUnicas().slice(0,7);
+  const grid = document.getElementById("gridMarcasHome");
+  marcas.forEach(m=>{
+    const b = document.createElement("button");
+    b.className = "marca-item";
+    b.innerHTML = avatarHtml(m,false) + `<span>${escaparHtml(m)}</span>`;
+    b.onclick = ()=>navegar("marcaDetalle",{marca:m});
+    grid.appendChild(b);
+  });
+  if (marcasUnicas().length>7){
+    const b = document.createElement("button");
+    b.className = "marca-item";
+    b.innerHTML = `<div class="avatar" style="background:#e2e8f0;color:#64748b">···</div><span>Más</span>`;
+    b.onclick = ()=>irTab("marcas");
+    grid.appendChild(b);
   }
-  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupo.id);
-  if (error) alert("No se pudo guardar: " + error.message);
+}
+function navegarBusquedaDesdeHome(valor){
+  navStack.push({ v:"buscar", query: valor });
+  render();
 }
 
-async function eliminarGrupo(id) {
+// ---------- BUSCAR / TENGO UN COVER ----------
+function renderBuscar(actual){
+  const main = document.getElementById("main");
+  const esTengoUnCover = actual.v === "tengoUnCover";
+  main.innerHTML = `
+    <input type="text" id="inputBuscar" placeholder="Buscar modelo..." value="${escaparHtml(actual.query||"")}" />
+    <div id="resultadosBuscar" style="margin-top:10px;"></div>
+    <div class="consejo">Consejo: también puedes buscar por marca y luego seleccionar el modelo.</div>
+  `;
+  const input = document.getElementById("inputBuscar");
+  input.oninput = ()=>{ actual.query = input.value; pintarResultados(input.value); };
+  setTimeout(()=>input.focus(),50);
+  pintarResultados(actual.query||"");
+
+  function pintarResultados(q){
+    const cont = document.getElementById("resultadosBuscar");
+    const qq = q.trim().toLowerCase();
+    const lista = telefonosFlat().filter(t => !qq || (t.marca+" "+t.modelo).toLowerCase().includes(qq));
+    if (!qq){ cont.innerHTML=""; return; }
+    if (lista.length===0){ cont.innerHTML = `<div class="vacio">No hay modelos que coincidan.</div>`; return; }
+    cont.innerHTML = "";
+    lista.forEach(t=>{
+      const fila = document.createElement("div");
+      fila.className = "fila";
+      fila.style.cursor = "pointer";
+      fila.innerHTML = `${avatarHtml(t.marca,false)}<div class="fila-info"><div class="fila-nombre">${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</div></div><span class="chevron">›</span>`;
+      fila.onclick = ()=>navegar("compat",{marca:t.marca, modelo:t.modelo});
+      cont.appendChild(fila);
+    });
+  }
+}
+
+// ---------- COMPATIBILIDAD (detalle de un modelo) ----------
+function renderCompat(marca, modelo){
+  const main = document.getElementById("main");
+  const grupo = grupoDe(marca, modelo);
+  const otros = grupo ? (grupo.telefonos||[]).filter(t=>!(t.marca===marca&&t.modelo===modelo)) : [];
+  const esFav = favoritos.has(favKey(marca,modelo));
+
+  main.innerHTML = `
+    <div class="tarjeta" style="text-align:center;">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">${avatarHtml(marca,false)}</div>
+      <div class="tarjeta-titulo">${escaparHtml(marca)} ${escaparHtml(modelo)}</div>
+      <button class="btn-texto" onclick="toggleFavorito('${escaparHtml(marca)}','${escaparHtml(modelo)}')" style="margin-top:8px;">
+        ${esFav ? "♥ En favoritos" : "♡ Agregar a favoritos"}
+      </button>
+      <div style="margin-top:12px;">
+        ${otros.length>0 ? `<span class="badge-verde">✓ Mismo cover</span>` : `<span class="badge-gris">Sin compatibilidades registradas</span>`}
+      </div>
+    </div>
+  `;
+
+  if (otros.length>0){
+    const principal = otros[0];
+    main.innerHTML += `
+      <div class="tarjeta" style="text-align:center;">
+        <div style="color:var(--texto-suave);font-size:13px;margin-bottom:8px;">También compatible con</div>
+        <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHtml(principal.marca,false)}</div>
+        <div style="font-weight:700;">${escaparHtml(principal.marca)} ${escaparHtml(principal.modelo)}</div>
+      </div>
+    `;
+    if (otros.length>0){
+      main.innerHTML += `<h3 style="font-size:14px;margin:16px 0 6px;">Otros modelos compatibles</h3>`;
+      const cont = document.createElement("div");
+      cont.className = "tarjeta";
+      otros.forEach(t=>{
+        const fila = document.createElement("div");
+        fila.className = "fila";
+        fila.style.cursor = "pointer";
+        fila.innerHTML = `<span style="color:var(--verde);">✓</span><div class="fila-info"><div class="fila-nombre">${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</div></div><span class="chevron">›</span>`;
+        fila.onclick = ()=>navegar("compat",{marca:t.marca, modelo:t.modelo});
+        cont.appendChild(fila);
+      });
+      main.appendChild(cont);
+    }
+  } else {
+    main.innerHTML += `<div class="vacio">Este modelo todavía no tiene compatibilidades registradas. Puedes agregarlo a un grupo desde la pestaña "Grupos".</div>`;
+  }
+}
+
+// ---------- MARCAS ----------
+function renderMarcas(main){
+  main.innerHTML = `<input type="text" placeholder="Buscar marca..." oninput="filtrarMarcas(this.value)" /><div id="listaMarcas" style="margin-top:12px;" class="tarjeta"></div>`;
+  pintarListaMarcas("");
+}
+function filtrarMarcas(q){ pintarListaMarcas(q); }
+function pintarListaMarcas(q){
+  const cont = document.getElementById("listaMarcas");
+  const qq = q.trim().toLowerCase();
+  const marcas = marcasUnicas().filter(m=>!qq || m.toLowerCase().includes(qq));
+  cont.innerHTML = "";
+  if (marcas.length===0){ cont.innerHTML = `<div class="vacio">No hay marcas que coincidan.</div>`; return; }
+  marcas.forEach(m=>{
+    const fila = document.createElement("div");
+    fila.className = "fila";
+    fila.style.cursor = "pointer";
+    fila.innerHTML = `${avatarHtml(m,false)}<div class="fila-info"><div class="fila-nombre">${escaparHtml(m)}</div></div><span class="chevron">›</span>`;
+    fila.onclick = ()=>navegar("marcaDetalle",{marca:m});
+    cont.appendChild(fila);
+  });
+}
+
+// ---------- DETALLE DE MARCA ----------
+function renderMarcaDetalle(marca){
+  const main = document.getElementById("main");
+  main.innerHTML = `
+    <input type="text" id="inputBuscarMarca" placeholder="Buscar modelo..." />
+    <div class="tabs-secundarias" style="margin-top:10px;">
+      <button id="tabTodos" class="activo" onclick="setTabMarca('todos')">Todos</button>
+      <button id="tabCompatibles" onclick="setTabMarca('compatibles')">Compatibles</button>
+    </div>
+    <div id="listaModelosMarca" class="tarjeta"></div>
+  `;
+  let tabActual = "todos";
+  window.setTabMarca = (t)=>{ tabActual=t; document.getElementById("tabTodos").classList.toggle("activo",t==="todos"); document.getElementById("tabCompatibles").classList.toggle("activo",t==="compatibles"); pintar(document.getElementById("inputBuscarMarca").value); };
+  document.getElementById("inputBuscarMarca").oninput = (e)=>pintar(e.target.value);
+  pintar("");
+
+  function pintar(q){
+    const qq = q.trim().toLowerCase();
+    let modelos = telefonosFlat().filter(t=>t.marca===marca);
+    if (qq) modelos = modelos.filter(t=>t.modelo.toLowerCase().includes(qq));
+    if (tabActual==="compatibles") modelos = modelos.filter(t=> (t.grupo.telefonos||[]).length>1);
+    const cont = document.getElementById("listaModelosMarca");
+    cont.innerHTML = "";
+    if (modelos.length===0){ cont.innerHTML = `<div class="vacio">No hay modelos que coincidan.</div>`; return; }
+    modelos.forEach(t=>{
+      const compatibles = (t.grupo.telefonos||[]).filter(x=>!(x.marca===t.marca&&x.modelo===t.modelo));
+      const fila = document.createElement("div");
+      fila.className = "fila";
+      fila.style.cursor="pointer";
+      fila.innerHTML = `
+        <div class="fila-info">
+          <div class="fila-nombre">${escaparHtml(t.modelo)}</div>
+          <div class="fila-code">${compatibles.length>0 ? "Compatible con: "+compatibles.map(c=>escaparHtml(c.marca+" "+c.modelo)).join(", ") : "Sin compatibilidades"}</div>
+        </div>
+        <span class="badge-gris">${compatibles.length} modelo${compatibles.length===1?"":"s"}</span>`;
+      fila.onclick = ()=>navegar("compat",{marca:t.marca, modelo:t.modelo});
+      cont.appendChild(fila);
+    });
+  }
+}
+
+// ---------- GRUPOS ----------
+function renderGrupos(main){
+  if (grupos.length===0){ main.innerHTML = `<div class="vacio">Todavía no hay grupos. Toca el botón + para crear el primero.</div>`; return; }
+  main.innerHTML = "";
+  grupos.forEach(g=>{
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "tarjeta";
+    tarjeta.style.cursor = "pointer";
+    tarjeta.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong>${etiquetaGrupo(g)}</strong>
+        <span class="badge-gris">${(g.telefonos||[]).length} modelos</span>
+      </div>
+      <div class="grupo-modelos">
+        ${(g.telefonos||[]).map(t=>`
+          <div class="grupo-modelo-chip">
+            ${avatarHtml(t.marca,false)}
+            <div class="nombre">${escaparHtml(t.marca)}</div>
+            <div class="code">${escaparHtml(t.modelo)}</div>
+          </div>`).join("")}
+      </div>
+    `;
+    tarjeta.onclick = ()=>navegar("grupoDetalle",{id:g.id});
+    main.appendChild(tarjeta);
+  });
+}
+
+function renderGrupoDetalle(id){
+  const main = document.getElementById("main");
+  const g = grupos.find(x=>x.id===id);
+  if (!g){ main.innerHTML = `<div class="vacio">Este grupo ya no existe.</div>`; return; }
+
+  main.innerHTML = `
+    <div class="tarjeta">
+      <strong>${etiquetaGrupo(g)}</strong>
+      <div class="grupo-modelos" style="margin-top:8px;">
+        ${(g.telefonos||[]).map(t=>`
+          <div class="grupo-modelo-chip" style="position:relative;">
+            ${avatarHtml(t.marca,false)}
+            <div class="nombre">${escaparHtml(t.marca)}</div>
+            <div class="code">${escaparHtml(t.modelo)}</div>
+          </div>`).join("")}
+      </div>
+      <p style="font-size:13px;color:var(--texto-suave);margin-top:10px;">
+        ${g.nota ? escaparHtml(g.nota) : "Estos modelos usan exactamente el mismo cover. Incluye cámaras, botones y puertos en la misma posición."}
+      </p>
+    </div>
+    <h3 style="font-size:14px;margin:16px 0 6px;">Modelos en este grupo</h3>
+    <div class="tarjeta" id="listaEditGrupo"></div>
+    <div style="margin-top:14px;">
+      <label>Agregar modelo a este grupo</label>
+      <div class="fila-agregar">
+        <input id="marcaAgregarGrupo" list="listaMarcasDatalist" placeholder="Marca" />
+        <input id="modeloAgregarGrupo" placeholder="Modelo" />
+        <button class="btn btn-linea" onclick="agregarModeloAGrupoExistente('${id}')">Agregar</button>
+      </div>
+    </div>
+    <button class="btn btn-peligro" style="margin-top:18px;" onclick="eliminarGrupo('${id}')">Eliminar grupo completo</button>
+  `;
+  pintarDatalistMarcas();
+  const cont = document.getElementById("listaEditGrupo");
+  (g.telefonos||[]).forEach(t=>{
+    const fila = document.createElement("div");
+    fila.className = "fila";
+    fila.innerHTML = `${avatarHtml(t.marca,false)}<div class="fila-info"><div class="fila-nombre">${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</div></div>`;
+    const btn = document.createElement("button");
+    btn.className = "btn-peligro";
+    btn.textContent = "Quitar";
+    btn.onclick = ()=>quitarTelefonoDeGrupo(id, t);
+    fila.appendChild(btn);
+    cont.appendChild(fila);
+  });
+}
+
+async function agregarModeloAGrupoExistente(grupoId){
+  const marca = document.getElementById("marcaAgregarGrupo").value.trim();
+  const modelo = document.getElementById("modeloAgregarGrupo").value.trim();
+  if (!marca || !modelo) return;
+  const g = grupos.find(x=>x.id===grupoId);
+  const yaExiste = (g.telefonos||[]).some(t=>t.marca===marca && t.modelo===modelo);
+  if (yaExiste){ alert("Ese modelo ya está en el grupo."); return; }
+  const nuevos = [...(g.telefonos||[]), { marca, modelo }];
+  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupoId);
+  if (error) alert("No se pudo guardar: " + error.message);
+}
+async function quitarTelefonoDeGrupo(grupoId, telefono){
+  const g = grupos.find(x=>x.id===grupoId);
+  const nuevos = (g.telefonos||[]).filter(t=>!(t.marca===telefono.marca && t.modelo===telefono.modelo));
+  if (nuevos.length===0){ await eliminarGrupo(grupoId); return; }
+  const { error } = await sb.from("grupos_covers").update({ telefonos: nuevos }).eq("id", grupoId);
+  if (error) alert("No se pudo guardar: " + error.message);
+}
+async function eliminarGrupo(id){
   if (!confirm("¿Eliminar este grupo por completo?")) return;
   const { error } = await sb.from("grupos_covers").delete().eq("id", id);
-  if (error) alert("No se pudo eliminar: " + error.message);
+  if (error){ alert("No se pudo eliminar: " + error.message); return; }
+  volver();
 }
 
-// ---------- MODAL: NUEVO GRUPO ----------
-function abrirModalNuevo() {
+// ---------- NUEVO GRUPO (modal) ----------
+function pintarDatalistMarcas(){
+  const dl = document.getElementById("listaMarcasDatalist");
+  dl.innerHTML = marcasUnicas().map(m=>`<option value="${escaparHtml(m)}">`).join("");
+}
+function abrirModalNuevoGrupo(){
   telefonosTemp = [];
   document.getElementById("nuevaMarca").value = "";
   document.getElementById("nuevoModelo").value = "";
   document.getElementById("nuevaNota").value = "";
-  renderizarTelefonosTemp();
+  pintarDatalistMarcas();
+  pintarTelefonosTemp();
   document.getElementById("modalNuevo").classList.remove("oculto");
 }
-function cerrarModalNuevo() {
-  document.getElementById("modalNuevo").classList.add("oculto");
-}
-function agregarTelefonoTemporal() {
+function cerrarModalNuevoGrupo(){ document.getElementById("modalNuevo").classList.add("oculto"); }
+function agregarTelefonoTemporal(){
   const marca = document.getElementById("nuevaMarca").value.trim();
   const modelo = document.getElementById("nuevoModelo").value.trim();
   if (!marca || !modelo) return;
   telefonosTemp.push({ marca, modelo });
   document.getElementById("nuevoModelo").value = "";
-  renderizarTelefonosTemp();
+  pintarTelefonosTemp();
 }
-function renderizarTelefonosTemp() {
-  const div = document.getElementById("listaTelefonosNuevo");
-  div.innerHTML = "";
-  telefonosTemp.forEach((t, i) => {
+function pintarTelefonosTemp(){
+  const cont = document.getElementById("listaTelefonosNuevo");
+  cont.innerHTML = "";
+  telefonosTemp.forEach((t,i)=>{
     const fila = document.createElement("div");
-    fila.className = "telefono-fila";
+    fila.className = "fila-modal";
     fila.innerHTML = `<span>• ${escaparHtml(t.marca)} ${escaparHtml(t.modelo)}</span>`;
     const btn = document.createElement("button");
-    btn.className = "peligro";
+    btn.className = "btn-peligro";
     btn.textContent = "Quitar";
-    btn.onclick = () => { telefonosTemp.splice(i, 1); renderizarTelefonosTemp(); };
+    btn.onclick = ()=>{ telefonosTemp.splice(i,1); pintarTelefonosTemp(); };
     fila.appendChild(btn);
-    div.appendChild(fila);
+    cont.appendChild(fila);
   });
 }
-async function crearGrupo() {
-  if (telefonosTemp.length === 0) {
-    alert("Agrega al menos un modelo.");
-    return;
-  }
+async function crearGrupo(){
+  if (telefonosTemp.length===0){ alert("Agrega al menos un modelo."); return; }
   const nota = document.getElementById("nuevaNota").value.trim();
   const { error } = await sb.from("grupos_covers").insert({ telefonos: telefonosTemp, nota });
-  if (error) {
-    alert("No se pudo crear el grupo: " + error.message);
-    return;
-  }
-  cerrarModalNuevo();
+  if (error){ alert("No se pudo crear: " + error.message); return; }
+  cerrarModalNuevoGrupo();
 }
 
-// ---------- UTIL ----------
-function escaparHtml(texto) {
-  const d = document.createElement("div");
-  d.textContent = texto ?? "";
-  return d.innerHTML;
+// ---------- FAVORITOS ----------
+function renderFavoritos(main){
+  if (favoritos.size===0){ main.innerHTML = `<div class="vacio">Todavía no tienes modelos favoritos. Tócalos desde su pantalla de compatibilidad.</div>`; return; }
+  main.innerHTML = "";
+  const cont = document.createElement("div");
+  cont.className = "tarjeta";
+  [...favoritos].forEach(k=>{
+    const [marca, modelo] = k.split("||");
+    const fila = document.createElement("div");
+    fila.className = "fila";
+    fila.style.cursor="pointer";
+    fila.innerHTML = `${avatarHtml(marca,false)}<div class="fila-info"><div class="fila-nombre">${escaparHtml(marca)} ${escaparHtml(modelo)}</div></div><span class="chevron">›</span>`;
+    fila.onclick = ()=>navegar("compat",{marca,modelo});
+    cont.appendChild(fila);
+  });
+  main.appendChild(cont);
+}
+
+// ---------- CONFIGURACIÓN (logos de marca) ----------
+function renderConfig(main){
+  main.innerHTML = `
+    <h3 style="font-size:15px;margin-bottom:8px;">Logos de marca</h3>
+    <p style="font-size:13px;color:var(--texto-suave);margin-bottom:10px;">
+      Sube el logo real de cada marca para que se vea en toda la app en vez del círculo con iniciales.
+    </p>
+    <div class="tarjeta" id="listaLogos"></div>
+    <button class="btn-peligro" style="margin-top:24px;" onclick="cerrarSesion()">Cerrar sesión</button>
+  `;
+  const cont = document.getElementById("listaLogos");
+  marcasUnicas().forEach(m=>{
+    const fila = document.createElement("div");
+    fila.className = "fila";
+    const inputId = "logo_"+slug(m);
+    fila.innerHTML = `
+      ${avatarHtml(m,false)}
+      <div class="fila-info"><div class="fila-nombre">${escaparHtml(m)}</div></div>
+      <label class="btn-texto" for="${inputId}" style="cursor:pointer;">Cambiar logo</label>
+      <input type="file" id="${inputId}" accept="image/*" class="oculto" />
+    `;
+    cont.appendChild(fila);
+    document.getElementById(inputId).onchange = (e)=>{
+      const f = e.target.files[0];
+      if (f) subirLogo(m, f);
+    };
+  });
+}
+
+async function subirLogo(marca, archivo){
+  const s = slug(marca);
+  const ext = (archivo.name.split(".").pop() || "png").toLowerCase();
+  const ruta = `${s}.${ext}`;
+  const { error: errSubida } = await sb.storage.from("logos").upload(ruta, archivo, { upsert: true, contentType: archivo.type });
+  if (errSubida){ alert("No se pudo subir el logo: " + errSubida.message); return; }
+  const { data } = sb.storage.from("logos").getPublicUrl(ruta);
+  const urlPublica = data.publicUrl + "?t=" + Date.now();
+  const { error: errTabla } = await sb.from("marca_logos").upsert({ marca_slug: s, logo_url: urlPublica });
+  if (errTabla){ alert("Se subió el logo pero no se pudo guardar el enlace: " + errTabla.message); return; }
+  logosMap[s] = urlPublica;
+  render();
 }
 </script>
 </body>
