@@ -362,6 +362,7 @@ function renderCompat(marca, modelo){
       <div style="margin-top:12px;">
         ${otros.length>0 ? `<span class="badge-verde">✓ Mismo cover</span>` : `<span class="badge-gris">Sin compatibilidades registradas</span>`}
       </div>
+      ${grupo && grupo.nota ? `<div class="consejo" style="text-align:left;margin-top:14px;">${escaparHtml(grupo.nota)}</div>` : ""}
     </div>
   `;
 
@@ -506,9 +507,9 @@ function renderGrupoDetalle(id){
             <div class="code">${escaparHtml(t.modelo)}</div>
           </div>`).join("")}
       </div>
-      <p style="font-size:13px;color:var(--texto-suave);margin-top:10px;">
-        ${g.nota ? escaparHtml(g.nota) : "Estos modelos usan exactamente el mismo cover. Incluye cámaras, botones y puertos en la misma posición."}
-      </p>
+      <label style="margin-top:10px;">Nota (opcional)</label>
+      <input id="notaGrupo" value="${escaparHtml(g.nota||"")}" placeholder="Ej: cuidado, flash algo desalineado" />
+      <button class="btn-texto" style="margin-top:6px;" onclick="guardarNotaGrupo('${id}')">Guardar nota</button>
     </div>
     <h3 style="font-size:14px;margin:16px 0 6px;">Modelos en este grupo</h3>
     <div class="tarjeta" id="listaEditGrupo"></div>
@@ -575,6 +576,13 @@ async function marcarCompatibles(a, b){
     const { error } = await sb.from("grupos_covers").insert({ telefonos: [a,b], nota: "" });
     if (error){ alert("No se pudo crear: " + error.message); return; }
   }
+  await refrescarYRepintar();
+}
+
+async function guardarNotaGrupo(grupoId){
+  const nota = document.getElementById("notaGrupo").value.trim();
+  const { error } = await sb.from("grupos_covers").update({ nota }).eq("id", grupoId);
+  if (error){ alert("No se pudo guardar la nota: " + error.message); return; }
   await refrescarYRepintar();
 }
 
